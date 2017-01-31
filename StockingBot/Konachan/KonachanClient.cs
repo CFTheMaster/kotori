@@ -1,11 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
 
-namespace StockingBot.Danbooru
+namespace StockingBot.Konachan
 {
-    class DanbooruClient : ImageClient
+    class KonachanClient : ImageClient
     {
-        private string RandomUrl = "https://danbooru.donmai.us/posts/random.json?tags={0}";
+        private string RandomUrl = "https://konachan.net/post.json?tags=order:random+{0}&limit=1";
 
         public override ImageResult GetRandomPost(string[] tags)
         {
@@ -14,7 +14,7 @@ namespace StockingBot.Danbooru
             using (WebClient web = new WebClient())
             {
                 string url = string.Format(RandomUrl, string.Join("+", tags));
-                result = JsonConvert.DeserializeObject<DanbooruResult>(web.DownloadString(url));
+                result = JsonConvert.DeserializeObject<KonachanResult[]>(web.DownloadString(url))[0];
             }
 
             return result;

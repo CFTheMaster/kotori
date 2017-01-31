@@ -78,6 +78,8 @@
     <Compile Include="Danbooru\DanbooruResult.cs" />
     <Compile Include="ImageClient.cs" />
     <Compile Include="ImageResult.cs" />
+    <Compile Include="Konachan\KonachanClient.cs" />
+    <Compile Include="Konachan\KonachanResult.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

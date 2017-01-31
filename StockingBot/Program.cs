@@ -1,5 +1,6 @@
 ﻿using LinqToTwitter;
 using StockingBot.Danbooru;
+using StockingBot.Konachan;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,14 +14,12 @@ namespace StockingBot
         public static TwitterContext Twitter;
         private static List<Timer> Timers = new List<Timer>();
         private static ManualResetEvent ManualReset = new ManualResetEvent(false);
+        private static Random Random = new Random();
 
         static void Main(string[] args)
         {
             Log("StockingBot");
-
             Config = new ConfigManager("StockingBot.ini");
-
-            Log("Loaded Config");
 
             Twitter = new TwitterContext(new SingleUserAuthorizer {
                 CredentialStore = new SingleUserInMemoryCredentialStore {
@@ -41,7 +40,9 @@ namespace StockingBot
 
         public static void Kill(object sender = null, ConsoleCancelEventArgs args = null)
         {
+            Log("Stopping");
             Timers.Clear();
+            Config.Dispose();
             ManualReset.Set();
 
             if (args != null) {
@@ -58,9 +59,21 @@ namespace StockingBot
 
         public static void Post(bool schedule = true)
         {
-            string[] tags = Config.Get<string>("Images", "Tags").Split('|');
+            ImageClient client;
+            string[] tags;
 
-            ImageClient client = new DanbooruClient();
+            // do this in a non-stupid way when care to
+            if (Random.Next(10) > 5)
+            {
+                Log("Fetching from Danbooru");
+                client = new DanbooruClient();
+                tags = Config.Get("Source.Danbooru", "Tags", "stocking_(psg) 1girl").Split(' ');
+            } else {
+                Log("Fetching from Konachan");
+                client = new KonachanClient();
+                tags = Config.Get("Source.Konachan", "Tags", "stocking_(character)").Split(' ');
+            }
+
             ImageResult result = client.GetRandomPost(tags);
 
             Log($"Got ImageResult, Filename: {result.FileName}");
@@ -72,7 +85,12 @@ namespace StockingBot
             {
                 string path = Config.Get("Saving", "Path", AppDomain.CurrentDomain.BaseDirectory);
                 path = Path.Combine(path, result.FileName + result.FileExtension);
-                File.WriteAllBytes(path, image);
+
+                using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(image, 0, image.Length);
+                }
+
                 Log($"Saved file to {path}");
             }
 

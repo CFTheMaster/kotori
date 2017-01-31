@@ -9,7 +9,7 @@ namespace StockingBot
 {
     public class ConfigManager : IDisposable
     {
-        // taken straight from railgun with filewatcher removed
+        private FileSystemWatcher FileWatcher;
         private string Filename;
         private Dictionary<string, Dictionary<string, string>> Values = new Dictionary<string, Dictionary<string, string>>();
         private Dictionary<string, List<Action>> Callbacks = new Dictionary<string, List<Action>>();
@@ -18,6 +18,18 @@ namespace StockingBot
         {
             Filename = filename;
             Reload();
+
+            FileWatcher = new FileSystemWatcher(AppDomain.CurrentDomain.BaseDirectory, Filename);
+            FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            FileWatcher.Changed += new FileSystemEventHandler(FileWatcher_Changed);
+            FileWatcher.EnableRaisingEvents = true;
+        }
+
+        private void FileWatcher_Changed(object sender, FileSystemEventArgs args)
+        {
+            FileWatcher.EnableRaisingEvents = false;
+            Reload();
+            FileWatcher.EnableRaisingEvents = true;
         }
 
         private void Reset(bool callbacks = false)
@@ -184,7 +196,9 @@ namespace StockingBot
 
         public void Save()
         {
+            FileWatcher.EnableRaisingEvents = false;
             Write(ToString());
+            FileWatcher.EnableRaisingEvents = true;
         }
 
         private string Read()
@@ -203,6 +217,7 @@ namespace StockingBot
 
         public void Reload()
         {
+            Program.Log("Reloading configuration...");
             Reset();
             Parse(Read());
         }

@@ -11,10 +11,13 @@ namespace StockingBot.Danbooru
         [JsonProperty("file_url")]
         private string DanbooruFileUrl;
 
+        [JsonProperty("file_ext")]
+        private string DanbooruExt;
+
         public override string Id => DanbooruId.ToString();
         public override string PostUrl => "https://danbooru.donmai.us/posts/" + DanbooruId;
         public override string FileUrl => "https://danbooru.donmai.us" + DanbooruFileUrl;
         public override string FileName => Path.GetFileNameWithoutExtension(DanbooruFileUrl);
-        public override string FileExtension => Path.GetExtension(DanbooruFileUrl);
+        public override string FileExtension => "." + DanbooruExt;
     }
 }
