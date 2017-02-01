@@ -16,6 +16,9 @@ namespace StockingBot
         private static ManualResetEvent ManualReset = new ManualResetEvent(false);
         private static Random Random = new Random();
 
+        public static DanbooruClient Danbooru;
+        public static KonachanClient Konachan;
+
         static void Main(string[] args)
         {
             Log("StockingBot");
@@ -32,6 +35,9 @@ namespace StockingBot
 
             Log("Created Twitter context");
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Kill);
+
+            Danbooru = new DanbooruClient();
+            Konachan = new KonachanClient();
 
             Post();
 
@@ -66,11 +72,11 @@ namespace StockingBot
             if (Random.Next(10) > 5)
             {
                 Log("Fetching from Danbooru");
-                client = new DanbooruClient();
+                client = Danbooru;
                 tags = Config.Get("Source.Danbooru", "Tags", "stocking_(psg) 1girl").Split(' ');
             } else {
                 Log("Fetching from Konachan");
-                client = new KonachanClient();
+                client = Konachan;
                 tags = Config.Get("Source.Konachan", "Tags", "stocking_(character)").Split(' ');
             }
 
@@ -94,8 +100,23 @@ namespace StockingBot
                 Log($"Saved file to {path}");
             }
 
-            Media media = Media(image, mime);
-            Status tweet = Tweet(result.PostUrl, new ulong[] { media.MediaID });
+            Media media = null;
+            Status tweet = null;
+
+            try
+            {
+                media = Media(image, mime);
+                tweet = Tweet(result.PostUrl, new ulong[] { media.MediaID });
+            } catch (TwitterQueryException) {
+            }
+
+            if (tweet == null) {
+                Log("Failed! Retrying in 1 minute...");
+                Schedule(DateTime.Now.AddMinutes(1).Ticks, () => {
+                    Post(schedule);
+                });
+                return;
+            }
 
             Log($"Posted! {tweet.StatusID}");
 
