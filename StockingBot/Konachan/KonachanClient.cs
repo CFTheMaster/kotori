@@ -5,7 +5,7 @@ namespace StockingBot.Konachan
 {
     class KonachanClient : ImageClient
     {
-        private string RandomUrl = "https://konachan.net/post.json?tags=order:random+{0}&limit=1";
+        private string RandomUrl = "https://konachan.com/post.json?tags=order:random+{0}&limit=1";
 
         public override ImageResult GetRandomPost(string[] tags)
         {
