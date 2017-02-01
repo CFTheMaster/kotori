@@ -12,7 +12,7 @@ namespace StockingBot.Konachan
         private string KonaFileUrl;
         
         public override string Id => KonaId.ToString();
-        public override string PostUrl => "https://konachan.net/post/show/" + KonaId;
+        public override string PostUrl => "https://konachan.com/post/show/" + KonaId;
         public override string FileUrl => "https:" + KonaFileUrl;
         public override string FileName => "Konachan " + KonaId;
         public override string FileExtension => Path.GetExtension(KonaFileUrl);
