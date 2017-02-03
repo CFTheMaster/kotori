@@ -5,22 +5,17 @@ namespace StockingBot
     public class Twitter
     {
         private TwitterContext Context;
-
-        public string ConsumerKey = "";
-        public string ConsumerSecret = "";
-        public string OAuthToken = "";
-        public string OAuthTokenSecret = "";
-
-        public Twitter()
+        
+        public Twitter(string consKey, string consSec, string oat, string oats)
         {
             Context = new TwitterContext(new SingleUserAuthorizer
             {
                 CredentialStore = new SingleUserInMemoryCredentialStore
                 {
-                    ConsumerKey = ConsumerKey,
-                    ConsumerSecret = ConsumerSecret,
-                    OAuthToken = OAuthToken,
-                    OAuthTokenSecret = OAuthTokenSecret
+                    ConsumerKey = consKey,
+                    ConsumerSecret = consSec,
+                    OAuthToken = oat,
+                    OAuthTokenSecret = oats
                 }
             });
         }

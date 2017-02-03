@@ -21,12 +21,12 @@ namespace StockingBot
         {
             Log("StockingBot");
             Config = new ConfigManager("StockingBot.ini");
-            Twitter = new Twitter {
-                ConsumerKey = Config.Get("Auth", "ConsumerKey", "Create an application here: https://apps.twitter.com/"),
-                ConsumerSecret = Config.Get("Auth", "ConsumerSecret", "Go to the Keys and Access tokens tab"),
-                OAuthToken = Config.Get("Auth", "OAuthToken", "Click Get access tokens and set them here"),
-                OAuthTokenSecret = Config.Get("Auth", "OAuthTokenSecret", "Enjoy shitposting anime girls!")
-            };
+            Twitter = new Twitter(
+                Config.Get("Auth", "ConsumerKey", "Create an application here: https://apps.twitter.com/"),
+                Config.Get("Auth", "ConsumerSecret", "Go to the Keys and Access tokens tab"),
+                Config.Get("Auth", "OAuthToken", "Click Get access tokens and set them here"),
+                Config.Get("Auth", "OAuthTokenSecret", "Enjoy shitposting anime girls!")
+            );
 
             Log("Created Twitter context");
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Kill);
