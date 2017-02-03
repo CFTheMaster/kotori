@@ -82,6 +82,8 @@
     <Compile Include="Konachan\KonachanResult.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Yandere\YandereClient.cs" />
+    <Compile Include="Yandere\YandereResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

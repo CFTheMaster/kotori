@@ -1,9 +1,11 @@
 ﻿using LinqToTwitter;
 using StockingBot.Danbooru;
 using StockingBot.Konachan;
+using StockingBot.Yandere;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace StockingBot
@@ -16,8 +18,7 @@ namespace StockingBot
         private static ManualResetEvent ManualReset = new ManualResetEvent(false);
         private static Random Random = new Random();
 
-        public static DanbooruClient Danbooru;
-        public static KonachanClient Konachan;
+        public static Dictionary<string, ImageClient> Clients = new Dictionary<string, ImageClient>();
 
         static void Main(string[] args)
         {
@@ -36,8 +37,10 @@ namespace StockingBot
             Log("Created Twitter context");
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Kill);
 
-            Danbooru = new DanbooruClient();
-            Konachan = new KonachanClient();
+            Clients.Clear();
+            Clients.Add("Danbooru", new DanbooruClient());
+            Clients.Add("Konachan", new KonachanClient());
+            Clients.Add("Yandere", new YandereClient());
 
             Post();
 
@@ -65,21 +68,14 @@ namespace StockingBot
 
         public static void Post(bool schedule = true)
         {
-            ImageClient client;
-            string[] tags;
+            KeyValuePair<string, ImageClient> clientKVP = Clients.ToArray()[Random.Next(Clients.Count - 1)];
+            string name = clientKVP.Key;
+            ImageClient client = clientKVP.Value;
 
-            // do this in a non-stupid way when care to
-            if (Random.Next(10) > 5)
-            {
-                Log("Fetching from Danbooru");
-                client = Danbooru;
-                tags = Config.Get("Source.Danbooru", "Tags", "stocking_(psg) 1girl").Split(' ');
-            } else {
-                Log("Fetching from Konachan");
-                client = Konachan;
-                tags = Config.Get("Source.Konachan", "Tags", "stocking_(character)").Split(' ');
-            }
+            Log($"Fetching from {name}");
 
+            string[] tags = Config.Get($"Source.{name}", "Tags", string.Join(" ", client.DefaultTags)).Split(' ');
+            
             ImageResult result = client.GetRandomPost(tags);
 
             Log($"Got ImageResult, Filename: {result.FileName}");

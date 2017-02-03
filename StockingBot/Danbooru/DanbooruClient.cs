@@ -6,6 +6,7 @@ namespace StockingBot.Danbooru
     class DanbooruClient : ImageClient
     {
         private string RandomUrl = "https://danbooru.donmai.us/posts/random.json?tags={0}";
+        public override string[] DefaultTags => new string[] { "stocking_(psg)", "1girl" };
 
         public override ImageResult GetRandomPost(string[] tags)
         {
