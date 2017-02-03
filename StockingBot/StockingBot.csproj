@@ -80,8 +80,12 @@
     <Compile Include="ImageResult.cs" />
     <Compile Include="Konachan\KonachanClient.cs" />
     <Compile Include="Konachan\KonachanResult.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Rand.cs" />
+    <Compile Include="Scheduler.cs" />
+    <Compile Include="Twitter.cs" />
     <Compile Include="Yandere\YandereClient.cs" />
     <Compile Include="Yandere\YandereResult.cs" />
   </ItemGroup>

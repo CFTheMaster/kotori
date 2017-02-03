@@ -12,27 +12,21 @@ namespace StockingBot
 {
     class Program
     {
-        public static ConfigManager Config;
-        public static TwitterContext Twitter;
-        private static List<Timer> Timers = new List<Timer>();
+        private static ConfigManager Config;
+        private static Twitter Twitter;
         private static ManualResetEvent ManualReset = new ManualResetEvent(false);
-        private static Random Random = new Random();
-
-        public static Dictionary<string, ImageClient> Clients = new Dictionary<string, ImageClient>();
+        private static Dictionary<string, ImageClient> Clients = new Dictionary<string, ImageClient>();
 
         static void Main(string[] args)
         {
             Log("StockingBot");
             Config = new ConfigManager("StockingBot.ini");
-
-            Twitter = new TwitterContext(new SingleUserAuthorizer {
-                CredentialStore = new SingleUserInMemoryCredentialStore {
-                    ConsumerKey = Config.Get("Auth", "ConsumerKey", "Create an application here: https://apps.twitter.com/"),
-                    ConsumerSecret = Config.Get("Auth", "ConsumerSecret", "Go to the Keys and Access tokens tab"),
-                    OAuthToken = Config.Get("Auth", "OAuthToken", "Click Get access tokens and set them here"),
-                    OAuthTokenSecret = Config.Get("Auth", "OAuthTokenSecret", "Enjoy shitposting anime girls!")
-                }
-            });
+            Twitter = new Twitter {
+                ConsumerKey = Config.Get("Auth", "ConsumerKey", "Create an application here: https://apps.twitter.com/"),
+                ConsumerSecret = Config.Get("Auth", "ConsumerSecret", "Go to the Keys and Access tokens tab"),
+                OAuthToken = Config.Get("Auth", "OAuthToken", "Click Get access tokens and set them here"),
+                OAuthTokenSecret = Config.Get("Auth", "OAuthTokenSecret", "Enjoy shitposting anime girls!")
+            };
 
             Log("Created Twitter context");
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Kill);
@@ -41,7 +35,7 @@ namespace StockingBot
             Clients.Add("Danbooru", new DanbooruClient());
             Clients.Add("Konachan", new KonachanClient());
             Clients.Add("Yandere", new YandereClient());
-
+            
             Post();
 
             ManualReset.WaitOne();
@@ -50,7 +44,7 @@ namespace StockingBot
         public static void Kill(object sender = null, ConsoleCancelEventArgs args = null)
         {
             Log("Stopping");
-            Timers.Clear();
+            Scheduler.Clear();
             Config.Dispose();
             ManualReset.Set();
 
@@ -61,14 +55,21 @@ namespace StockingBot
             Environment.Exit(0);
         }
 
-        public static void Log(string text)
+        public static void Log(string text = null)
         {
+            if (text == null){
+                Console.WriteLine();
+                return;
+            }
+
             Console.WriteLine($"[{DateTime.Now:MM/dd/yy H:mm:ss zzz}] {text}");
         }
 
         public static void Post(bool schedule = true)
         {
-            KeyValuePair<string, ImageClient> clientKVP = Clients.ToArray()[Random.Next(Clients.Count - 1)];
+            Log();
+
+            KeyValuePair<string, ImageClient> clientKVP = Clients.ToArray()[Rand.Next() % Clients.Count];
             string name = clientKVP.Key;
             ImageClient client = clientKVP.Value;
 
@@ -101,14 +102,14 @@ namespace StockingBot
 
             try
             {
-                media = Media(image, mime);
-                tweet = Tweet(result.PostUrl, new ulong[] { media.MediaID });
+                media = Twitter.Media(image, mime);
+                tweet = Twitter.Tweet(result.PostUrl, new ulong[] { media.MediaID });
             } catch (TwitterQueryException) {
             }
 
             if (tweet == null) {
                 Log("Failed! Retrying in 1 minute...");
-                Schedule(DateTime.Now.AddMinutes(1).Ticks, () => {
+                Scheduler.Schedule(DateTime.Now.AddMinutes(1).Ticks, () => {
                     Post(schedule);
                 });
                 return;
@@ -119,28 +120,11 @@ namespace StockingBot
             if (schedule) {
                 int interval = Config.Get("Scheduler", "Interval", 15);
                 Log($"Scheduling another run in {interval} minute(s)");
-                Schedule(DateTime.Now.AddMinutes(interval).Ticks, () =>
+                Scheduler.Schedule(DateTime.Now.AddMinutes(interval).Ticks, () =>
                 {
                     Post(schedule);
                 });
             }
         }
-
-        public static void Schedule(long ticks, Action action)
-        {
-            DateTime current = DateTime.Now;
-            TimeSpan until = new TimeSpan(ticks - current.Ticks);
-
-            if (until < TimeSpan.Zero) {
-                return;
-            }
-
-            Timers.Add(new Timer((x) => {
-                action.Invoke();
-            }, null, until, Timeout.InfiniteTimeSpan));
-        }
-        
-        public static Status Tweet(string text, ulong[] mediaIds = null) => Twitter.TweetAsync(text, mediaIds).GetAwaiter().GetResult();
-        public static Media Media(byte[] media, string mediaType) => Twitter.UploadMediaAsync(media, mediaType).GetAwaiter().GetResult();
     }
 }
