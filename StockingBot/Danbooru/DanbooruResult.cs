@@ -1,23 +1,34 @@
 ﻿using Newtonsoft.Json;
-using System.IO;
 
 namespace StockingBot.Danbooru
 {
     class DanbooruResult : ImageResult
     {
         [JsonProperty("id")]
-        private int DanbooruId;
+        private int DanId;
 
         [JsonProperty("file_url")]
-        private string DanbooruFileUrl;
+        private string DanFileUrl;
 
         [JsonProperty("file_ext")]
-        private string DanbooruExt;
+        private string DanExt;
 
-        public override string Id => DanbooruId.ToString();
-        public override string PostUrl => "https://danbooru.donmai.us/posts/" + DanbooruId;
-        public override string FileUrl => "https://danbooru.donmai.us" + DanbooruFileUrl;
-        public override string FileName => Path.GetFileNameWithoutExtension(DanbooruFileUrl);
-        public override string FileExtension => "." + DanbooruExt;
+        [JsonProperty("md5")]
+        private string DanHash;
+
+        [JsonProperty("tag_string")]
+        private string DanTags;
+
+        public override string Id => DanId.ToString();
+
+        public override string PostUrl => "https://danbooru.donmai.us/posts/" + DanId;
+
+        public override string FileUrl => "https://danbooru.donmai.us" + DanFileUrl;
+
+        public override string FileHash => DanHash;
+
+        public override string FileExtension => "." + DanExt;
+
+        public override string[] Tags => DanTags.Split(' ');
     }
 }

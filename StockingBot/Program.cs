@@ -7,25 +7,33 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Reflection;
 
 namespace StockingBot
 {
     class Program
     {
-        private static ConfigManager Config;
-        private static Twitter Twitter;
+        public static ConfigManager Config;
+        private static HashManager Hashes;
+        private static TwitterWrapper Twitter;
         private static ManualResetEvent ManualReset = new ManualResetEvent(false);
         private static Dictionary<string, ImageClient> Clients = new Dictionary<string, ImageClient>();
 
         static void Main(string[] args)
         {
             Log("StockingBot");
-            Config = new ConfigManager("StockingBot.ini");
-            Twitter = new Twitter(
-                Config.Get("Auth", "ConsumerKey", "Create an application here: https://apps.twitter.com/"),
-                Config.Get("Auth", "ConsumerSecret", "Go to the Keys and Access tokens tab"),
-                Config.Get("Auth", "OAuthToken", "Click Get access tokens and set them here"),
-                Config.Get("Auth", "OAuthTokenSecret", "Enjoy shitposting anime girls!")
+
+            // needlessly complicating things is fun!
+            string configName = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location) + ".ini";
+
+            Config = new ConfigManager(configName);
+            Hashes = new HashManager(Config.Get("HashManager", "HashesFile", "Hashes.txt"));
+
+            Twitter = new TwitterWrapper(
+                Config.Get<string>("Auth", "ConsumerKey"),
+                Config.Get<string>("Auth", "ConsumerSecret"),
+                Config.Get<string>("Auth", "OAuthToken"),
+                Config.Get<string>("Auth", "OAuthTokenSecret")
             );
 
             Log("Created Twitter context");
@@ -43,9 +51,12 @@ namespace StockingBot
 
         public static void Kill(object sender = null, ConsoleCancelEventArgs args = null)
         {
-            Log("Stopping");
+            Log("Stopping...");
+
             Scheduler.Clear();
+            Hashes.Dispose();
             Config.Dispose();
+
             ManualReset.Set();
 
             if (args != null) {
@@ -55,19 +66,23 @@ namespace StockingBot
             Environment.Exit(0);
         }
 
-        public static void Log(string text = null)
+        public static void Log(string text)
         {
-            if (text == null){
-                Console.WriteLine();
-                return;
-            }
-
             Console.WriteLine($"[{DateTime.Now:MM/dd/yy H:mm:ss zzz}] {text}");
         }
 
-        public static void Post(bool schedule = true)
+        public static void SchedulePost(int minutes)
         {
-            Log();
+            Log($"Scheduling another run in {minutes} minute(s)");
+            Scheduler.Schedule(DateTime.Now.AddMinutes(minutes).Ticks, () => {
+                Post();
+            });
+        }
+        
+        public static void Post()
+        {
+            // enter empty line to make the log more readable
+            Console.WriteLine();
 
             KeyValuePair<string, ImageClient> clientKVP = Clients.ToArray()[Rand.Next() % Clients.Count];
             string name = clientKVP.Key;
@@ -76,23 +91,28 @@ namespace StockingBot
             Log($"Fetching from {name}");
 
             string[] tags = Config.Get($"Source.{name}", "Tags", string.Join(" ", client.DefaultTags)).Split(' ');
-            
+
             ImageResult result = client.GetRandomPost(tags);
 
-            Log($"Got ImageResult, Filename: {result.FileName}");
+            Log($"Got ImageResult, Hash: {result.FileHash}, Extension: {result.FileExtension}");
+            Log("Checking if the file already exists...");
+
+            if (Hashes.Exists(result.FileHash)) {
+                Log("Hash found in post history, retrying...");
+                SchedulePost(1);
+                return;
+            }
+            
+            Hashes.Add(result.FileHash);
 
             byte[] image = result.Download();
-            string mime = "image/png";
 
             if (Config.Get("Saving", "Enable", false))
             {
                 string path = Config.Get("Saving", "Path", AppDomain.CurrentDomain.BaseDirectory);
-                path = Path.Combine(path, result.FileName + result.FileExtension);
+                path = Path.Combine(path, result.FileHash + result.FileExtension);
 
-                using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write))
-                {
-                    fs.Write(image, 0, image.Length);
-                }
+                File.WriteAllBytes(path, image);
 
                 Log($"Saved file to {path}");
             }
@@ -102,29 +122,21 @@ namespace StockingBot
 
             try
             {
-                media = Twitter.Media(image, mime);
+                // the second directive doesn't actually matter for twitter so is statically set
+                media = Twitter.Media(image, "image/png");
                 tweet = Twitter.Tweet(result.PostUrl, new ulong[] { media.MediaID });
-            } catch (TwitterQueryException) {
+            } catch (TwitterQueryException ex) {
+                Log("TwitterQueryException: " + ex.ReasonPhrase);
             }
 
             if (tweet == null) {
-                Log("Failed! Retrying in 1 minute...");
-                Scheduler.Schedule(DateTime.Now.AddMinutes(1).Ticks, () => {
-                    Post(schedule);
-                });
+                Log("Failed, image was probably too large. Retrying...");
+                SchedulePost(1);
                 return;
             }
 
             Log($"Posted! {tweet.StatusID}");
-
-            if (schedule) {
-                int interval = Config.Get("Scheduler", "Interval", 15);
-                Log($"Scheduling another run in {interval} minute(s)");
-                Scheduler.Schedule(DateTime.Now.AddMinutes(interval).Ticks, () =>
-                {
-                    Post(schedule);
-                });
-            }
+            SchedulePost(Config.Get("Scheduler", "Interval", 15));
         }
     }
 }

@@ -2,11 +2,11 @@
 
 namespace StockingBot
 {
-    public class Twitter
+    public class TwitterWrapper
     {
         private TwitterContext Context;
         
-        public Twitter(string consKey, string consSec, string oat, string oats)
+        public TwitterWrapper(string consKey, string consSec, string oat, string oats)
         {
             Context = new TwitterContext(new SingleUserAuthorizer
             {
