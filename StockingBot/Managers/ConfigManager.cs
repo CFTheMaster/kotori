@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace StockingBot
+namespace StockingBot.Managers
 {
     public class ConfigManager : IDisposable
     {
@@ -187,7 +187,7 @@ namespace StockingBot
 
         public void Write(string contents)
         {
-            using (FileStream writer = new FileStream(Filename, FileMode.Truncate, FileAccess.Write, FileShare.None))
+            using (FileStream writer = new FileStream(Filename, FileMode.Truncate, FileAccess.Write, FileShare.ReadWrite))
             {
                 byte[] bytes = Encoding.UTF8.GetBytes(contents);
                 writer.Write(bytes, 0, bytes.Length);
@@ -217,7 +217,7 @@ namespace StockingBot
 
         public void Reload()
         {
-            Program.Log("Reloading configuration...");
+            Logger.Log("Config", "Reloading configuration...");
             Reset();
             Parse(Read());
         }

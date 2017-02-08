@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace StockingBot.Danbooru
+namespace StockingBot.Booru.Danbooru
 {
     class DanbooruResult : ImageResult
     {

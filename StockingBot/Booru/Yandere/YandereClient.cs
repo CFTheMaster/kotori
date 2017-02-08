@@ -1,10 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
 
-namespace StockingBot.Yandere
+namespace StockingBot.Booru.Yandere
 {
     class YandereClient : ImageClient
     {
+        public override string Name => "Yandere";
         private string RandomUrl = "https://yande.re/post.json?tags=order:random+{0}&limit=1";
         public override string[] DefaultTags => new string[] { "panty_%26_stocking_with_garterbelt", "stocking" };
 

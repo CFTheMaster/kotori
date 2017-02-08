@@ -1,10 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
 
-namespace StockingBot.Konachan
+namespace StockingBot.Booru.Konachan
 {
     class KonachanClient : ImageClient
     {
+        public override string Name => "Konachan";
         private string RandomUrl = "https://konachan.com/post.json?tags=order:random+{0}&limit=1";
         public override string[] DefaultTags => new string[] { "stocking_(character)" };
 

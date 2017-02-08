@@ -25,7 +25,7 @@ namespace StockingBot
             Timer timer = null;
 
             if (until < TimeSpan.Zero) {
-                return;
+                until = TimeSpan.Zero;
             }
 
             timer = new Timer(new TimerCallback(x => {

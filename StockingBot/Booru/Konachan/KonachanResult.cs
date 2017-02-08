@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.IO;
 
-namespace StockingBot.Konachan
+namespace StockingBot.Booru.Konachan
 {
     class KonachanResult : ImageResult
     {

@@ -1,10 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
 
-namespace StockingBot.Danbooru
+namespace StockingBot.Booru.Danbooru
 {
     class DanbooruClient : ImageClient
     {
+        public override string Name => "Danbooru";
         private string RandomUrl = "https://danbooru.donmai.us/posts/random.json?tags={0}&limit=1";
         public override string[] DefaultTags => new string[] { "stocking_(psg)", "1girl" };
 

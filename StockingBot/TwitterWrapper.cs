@@ -1,8 +1,9 @@
 ﻿using LinqToTwitter;
+using System;
 
 namespace StockingBot
 {
-    public class TwitterWrapper
+    public class TwitterWrapper : IDisposable
     {
         private TwitterContext Context;
         
@@ -22,6 +23,32 @@ namespace StockingBot
 
         public Status Tweet(string text, ulong[] mediaIds = null) => Context.TweetAsync(text, mediaIds).GetAwaiter().GetResult();
 
-        public Media Media(byte[] media, string mediaType) => Context.UploadMediaAsync(media, mediaType).GetAwaiter().GetResult();
+        public Media Media(byte[] media) => Context.UploadMediaAsync(media, "image/png").GetAwaiter().GetResult();
+
+        #region IDisposable
+
+        private bool IsDisposed = false;
+
+        private void Dispose(bool disposing)
+        {
+            if (!IsDisposed)
+            {
+                Context.Dispose();
+                IsDisposed = true;
+            }
+        }
+
+        ~TwitterWrapper()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(true);
+        }
+
+        #endregion
     }
 }

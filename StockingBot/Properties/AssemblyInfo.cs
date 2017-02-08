@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("StockingBot")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Stocking Bot")]
+[assembly: AssemblyDescription("Twitter Bot that posts random pictures from various Booru to Twitter accounts")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("StockingBot")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyCompany("flash.moe")]
+[assembly: AssemblyProduct("Stocking Bot")]
+[assembly: AssemblyCopyright("flash.moe 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
