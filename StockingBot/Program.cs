@@ -21,7 +21,11 @@ namespace StockingBot
         
         static void Main(string[] args)
         {
-            Logger.Log("Main", "StockingBot");
+            Logger.Log(new LogEntry {
+                Section = @"Main",
+                Text = @"StockingBot",
+            });
+
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Kill);
 
             // needlessly complicating things is fun!
@@ -31,7 +35,11 @@ namespace StockingBot
 
             if (bots.Length < 1 || bots[0].Length < 1)
             {
-                Logger.Log("Main", "Configure the bot first.");
+                Logger.Log(new LogEntry {
+                    Section = @"Main",
+                    Text = @"Configure the bot first!",
+                    Error = true,
+                });
                 Console.ReadKey();
                 Kill();
             }
@@ -62,7 +70,10 @@ namespace StockingBot
 
         public static void Kill(object sender = null, ConsoleCancelEventArgs args = null)
         {
-            Logger.Log("Main", "Stopping...");
+            Logger.Log(new LogEntry {
+                Section = @"Main",
+                Text = @"Stopping...",
+            });
 
             Scheduler.Clear();
 
@@ -84,7 +95,10 @@ namespace StockingBot
         public static void SchedulePost(uint minutes, Bot bot)
         {
             if (minutes > 0) {
-                Logger.Log(bot.Name, $"Scheduling another run in {minutes} minute(s)");
+                Logger.Log(new LogEntry {
+                    Section = bot.Name,
+                    Text = $@"Scheduling another run in {minutes} minute(s)",
+                });
             }
 
             Scheduler.Schedule(DateTime.Now.AddMinutes(minutes).Ticks, () => {
@@ -96,22 +110,47 @@ namespace StockingBot
         {
             ImageClient client = Clients[Rand.Next() % Clients.Count];
 
-            Logger.Log(bot.Name, $"Fetching from {client.Name}.");
+            Logger.Log(new LogEntry {
+                Section = bot.Name,
+                Text = $@"Fetching from {client.Name}...",
+            });
 
             string[] tags = Config.Get($"Bot.{bot.Name}.Source.{client.Name}", $"Tags", string.Join(" ", client.DefaultTags)).Split(' ');
-
+            bool stopAndRetry = false;
             ImageResult result = client.GetRandomPost(tags);
+            
+            Logger.Log(new LogEntry {
+                Section = bot.Name,
+                Text = $@"Got result! Hash: {result.FileHash}, Extension: {result.FileExtension}. Checking if the hash is recorded already...",
+            });
 
-            Logger.Log(bot.Name, $"Got ImageResult, Hash: {result.FileHash}, Extension: {result.FileExtension}");
-            Logger.Log(bot.Name, "Checking if the file already exists...");
+            if (!stopAndRetry && result.FileHash.Length < 1) {
+                stopAndRetry = true;
+                Logger.Log(new LogEntry
+                {
+                    Section = bot.Name,
+                    Text = @"Empty result?!",
+                    Error = true,
+                });
+            }
 
-            if (bot.Hashes.Exists(result.FileHash)) {
-                Logger.Log(bot.Name, "Hash found in post history, retrying...");
+            if (!stopAndRetry && bot.Hashes.Exists(result.FileHash)) {
+                stopAndRetry = true;
+                Logger.Log(new LogEntry {
+                    Section = bot.Name,
+                    Text = @"Hash found in post history!",
+                });
+            }
+
+            if (stopAndRetry) {
                 SchedulePost(1, bot);
                 return;
             }
-
-            Logger.Log(bot.Name, "Storing hash...");
+            
+            Logger.Log(new LogEntry {
+                Section = bot.Name,
+                Text = @"Storing hash...",
+            });
             bot.Hashes.Add(result.FileHash);
 
             byte[] image = result.Download();
@@ -122,28 +161,39 @@ namespace StockingBot
             {
                 savePath = Path.Combine(savePath, result.FileHash + result.FileExtension);
                 File.WriteAllBytes(savePath, image);
-                Logger.Log(bot.Name, $"Saved file to {savePath}");
+                Logger.Log(new LogEntry {
+                    Section = bot.Name,
+                    Text = $@"Saved file to {savePath}",
+                });
             }
 
             Media media = null;
             Status tweet = null;
 
-            try
-            {
-                // the second directive doesn't actually matter for twitter so is statically set
+            try {
                 media = bot.Twitter.Media(image);
                 tweet = bot.Twitter.Tweet(result.PostUrl, new ulong[] { media.MediaID });
             } catch (TwitterQueryException ex) {
-                Logger.Log(bot.Name, "TwitterQueryException: " + ex.ReasonPhrase);
+                Logger.Log(new LogEntry {
+                    Section = bot.Name,
+                    Text = $@"TwitterQueryException: {ex.ReasonPhrase}",
+                });
             }
 
             if (tweet == null) {
-                Logger.Log(bot.Name, "Failed, image was probably too large. Retrying...");
+                Logger.Log(new LogEntry {
+                    Section = bot.Name,
+                    Text = @"Failed, image was probably too large.",
+                    Error = true,
+                });
                 SchedulePost(1, bot);
                 return;
             }
-
-            Logger.Log(bot.Name, $"Posted! {tweet.StatusID}");
+            
+            Logger.Log(new LogEntry {
+                Section = bot.Name,
+                Text = $@"Posted! {tweet.StatusID}",
+            });
             SchedulePost(Config.Get<uint>("Bot", "ScheduleInterval", 15), bot);
         }
     }

@@ -217,7 +217,11 @@ namespace StockingBot.Managers
 
         public void Reload()
         {
-            Logger.Log("Config", "Reloading configuration...");
+            Logger.Log(new LogEntry {
+                Section = @"Config",
+                Text = @"Reloading configuration...",
+            });
+
             Reset();
             Parse(Read());
         }

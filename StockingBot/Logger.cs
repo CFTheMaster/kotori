@@ -20,12 +20,9 @@ namespace StockingBot
             FileShare.Read
         );
 
-        public static void Log(string section, string text)
+        public static void Log(LogEntry entry)
         {
-            Log(new LogEntry {
-                Section = section,
-                Text = text,
-            }, false);
+            Log(entry, false);
         }
 
         private static void Log(LogEntry entry, bool force)
@@ -37,8 +34,16 @@ namespace StockingBot
 
             Writing = true;
 
+            TextWriter console = Console.Out;
+            Console.ResetColor();
+
+            if (entry.Error) {
+                Console.ForegroundColor = ConsoleColor.Red;
+                console = Console.Error;
+            }
+
             string line = $"[{entry.Section.PadLeft(16)}] [{DateTime.Now:MM/dd/yy H:mm:ss zzz}] {entry.Text}" + Environment.NewLine;
-            Console.Write(line);
+            console.Write(line);
 
             byte[] lineBytes = Encoding.UTF8.GetBytes(line);
             File.Write(lineBytes, 0, lineBytes.Length);
@@ -54,7 +59,8 @@ namespace StockingBot
 
     public class LogEntry
     {
-        public string Section;
-        public string Text;
+        public bool Error = false;
+        public string Section = string.Empty;
+        public string Text = string.Empty;
     }
 }
