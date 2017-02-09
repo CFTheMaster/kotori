@@ -1,14 +1,14 @@
-﻿using LinqToTwitter;
-using StockingBot.Booru;
-using StockingBot.Booru.Danbooru;
-using StockingBot.Booru.Konachan;
-using StockingBot.Booru.Yandere;
-using StockingBot.Managers;
+﻿using StockingBot.Managers;
+using StockingBot.Sources;
+using StockingBot.Sources.Danbooru;
+using StockingBot.Sources.Konachan;
+using StockingBot.Sources.Yandere;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using LinqToTwitter;
 
 namespace StockingBot
 {
@@ -18,24 +18,33 @@ namespace StockingBot
         private static ManualResetEvent ManualReset = new ManualResetEvent(false);
         private static List<Bot> Bots = new List<Bot>();
         private static List<ImageClient> Clients = new List<ImageClient>();
+        private static Logger Log;
         
         static void Main(string[] args)
         {
-            Logger.Log(new LogEntry {
+            string appName = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
+
+            Log = new Logger($"{appName}.log");
+            Log.Write(new LogEntry {
                 Section = @"Main",
                 Text = @"StockingBot",
             });
 
             Console.CancelKeyPress += new ConsoleCancelEventHandler(Kill);
 
-            // needlessly complicating things is fun!
-            string configName = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location) + ".ini";
-            Config = new ConfigManager(configName);
+            Config = new ConfigManager($"{appName}.ini");
+            Config.OnReload.Add(() => {
+                Log.Write(new LogEntry {
+                    Section = @"Config",
+                    Text = @"Reloading configuration...",
+                });
+            });
+
             string[] bots = Config.Get("Bot", "Active", string.Empty).Split(' ');
 
             if (bots.Length < 1 || bots[0].Length < 1)
             {
-                Logger.Log(new LogEntry {
+                Log.Write(new LogEntry {
                     Section = @"Main",
                     Text = @"Configure the bot first!",
                     Error = true,
@@ -46,6 +55,10 @@ namespace StockingBot
 
             foreach (string bot in bots)
             {
+                if (bot.Trim().Length < 1) {
+                    continue;
+                }
+
                 string configSection = $"Bot.{bot}.Twitter";
 
                 Bots.Add(new Bot(
@@ -70,7 +83,7 @@ namespace StockingBot
 
         public static void Kill(object sender = null, ConsoleCancelEventArgs args = null)
         {
-            Logger.Log(new LogEntry {
+            Log.Write(new LogEntry {
                 Section = @"Main",
                 Text = @"Stopping...",
             });
@@ -95,7 +108,7 @@ namespace StockingBot
         public static void SchedulePost(uint minutes, Bot bot)
         {
             if (minutes > 0) {
-                Logger.Log(new LogEntry {
+                Log.Write(new LogEntry {
                     Section = bot.Name,
                     Text = $@"Scheduling another run in {minutes} minute(s)",
                 });
@@ -110,7 +123,7 @@ namespace StockingBot
         {
             ImageClient client = Clients[Rand.Next() % Clients.Count];
 
-            Logger.Log(new LogEntry {
+            Log.Write(new LogEntry {
                 Section = bot.Name,
                 Text = $@"Fetching from {client.Name}...",
             });
@@ -118,15 +131,15 @@ namespace StockingBot
             string[] tags = Config.Get($"Bot.{bot.Name}.Source.{client.Name}", $"Tags", string.Join(" ", client.DefaultTags)).Split(' ');
             bool stopAndRetry = false;
             ImageResult result = client.GetRandomPost(tags);
-            
-            Logger.Log(new LogEntry {
+
+            Log.Write(new LogEntry {
                 Section = bot.Name,
                 Text = $@"Got result! Hash: {result.FileHash}, Extension: {result.FileExtension}. Checking if the hash is recorded already...",
             });
 
             if (!stopAndRetry && result.FileHash.Length < 1) {
                 stopAndRetry = true;
-                Logger.Log(new LogEntry
+                Log.Write(new LogEntry
                 {
                     Section = bot.Name,
                     Text = @"Empty result?!",
@@ -136,7 +149,7 @@ namespace StockingBot
 
             if (!stopAndRetry && bot.Hashes.Exists(result.FileHash)) {
                 stopAndRetry = true;
-                Logger.Log(new LogEntry {
+                Log.Write(new LogEntry {
                     Section = bot.Name,
                     Text = @"Hash found in post history!",
                 });
@@ -146,8 +159,8 @@ namespace StockingBot
                 SchedulePost(1, bot);
                 return;
             }
-            
-            Logger.Log(new LogEntry {
+
+            Log.Write(new LogEntry {
                 Section = bot.Name,
                 Text = @"Storing hash...",
             });
@@ -161,7 +174,7 @@ namespace StockingBot
             {
                 savePath = Path.Combine(savePath, result.FileHash + result.FileExtension);
                 File.WriteAllBytes(savePath, image);
-                Logger.Log(new LogEntry {
+                Log.Write(new LogEntry {
                     Section = bot.Name,
                     Text = $@"Saved file to {savePath}",
                 });
@@ -174,14 +187,14 @@ namespace StockingBot
                 media = bot.Twitter.Media(image);
                 tweet = bot.Twitter.Tweet(result.PostUrl, new ulong[] { media.MediaID });
             } catch (TwitterQueryException ex) {
-                Logger.Log(new LogEntry {
+                Log.Write(new LogEntry {
                     Section = bot.Name,
                     Text = $@"TwitterQueryException: {ex.ReasonPhrase}",
                 });
             }
 
             if (tweet == null) {
-                Logger.Log(new LogEntry {
+                Log.Write(new LogEntry {
                     Section = bot.Name,
                     Text = @"Failed, image was probably too large.",
                     Error = true,
@@ -189,11 +202,12 @@ namespace StockingBot
                 SchedulePost(1, bot);
                 return;
             }
-            
-            Logger.Log(new LogEntry {
+
+            Log.Write(new LogEntry {
                 Section = bot.Name,
                 Text = $@"Posted! {tweet.StatusID}",
             });
+
             SchedulePost(Config.Get<uint>("Bot", "ScheduleInterval", 15), bot);
         }
     }

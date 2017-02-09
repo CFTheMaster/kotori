@@ -13,6 +13,7 @@ namespace StockingBot.Managers
         private string Filename;
         private Dictionary<string, Dictionary<string, string>> Values = new Dictionary<string, Dictionary<string, string>>();
         private Dictionary<string, List<Action>> Callbacks = new Dictionary<string, List<Action>>();
+        public List<Action> OnReload = new List<Action>();
 
         public ConfigManager(string filename)
         {
@@ -217,11 +218,7 @@ namespace StockingBot.Managers
 
         public void Reload()
         {
-            Logger.Log(new LogEntry {
-                Section = @"Config",
-                Text = @"Reloading configuration...",
-            });
-
+            OnReload.ForEach((x) => { x.Invoke(); });
             Reset();
             Parse(Read());
         }

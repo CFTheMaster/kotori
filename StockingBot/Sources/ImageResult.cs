@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace StockingBot.Booru
+namespace StockingBot.Sources
 {
     public abstract class ImageResult
     {

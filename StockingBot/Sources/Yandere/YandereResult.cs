@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace StockingBot.Booru.Yandere
+namespace StockingBot.Sources.Yandere
 {
     class YandereResult : ImageResult
     {

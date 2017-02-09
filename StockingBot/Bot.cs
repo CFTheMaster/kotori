@@ -1,23 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using StockingBot.Managers;
+﻿using StockingBot.Managers;
+using System;
 
 namespace StockingBot
 {
     public class Bot : IDisposable
     {
         public string Name { private set; get; }
-        public TwitterWrapper Twitter { private set; get; }
         public HashManager Hashes { private set; get; }
+        public TwitterWrapper Twitter { private set; get; }
 
         public Bot(string name, string consKey, string consSec, string oat, string oats)
         {
             Name = name;
             Hashes = new HashManager($"Hashes.{Name}.txt");
-            Twitter = new TwitterWrapper(consKey, consSec, oat, oats);
+            Twitter = new TwitterWrapper(
+                consKey,
+                consSec,
+                oat,
+                oats
+            );
         }
 
         #region IDisposable

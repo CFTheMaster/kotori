@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
 
-namespace StockingBot.Booru.Yandere
+namespace StockingBot.Sources.Yandere
 {
     class YandereClient : ImageClient
     {

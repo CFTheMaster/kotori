@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
 
-namespace StockingBot.Booru.Danbooru
+namespace StockingBot.Sources.Danbooru
 {
     class DanbooruClient : ImageClient
     {

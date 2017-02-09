@@ -1,31 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using System.Reflection;
+using System.Text;
 
 namespace StockingBot
 {
-    public static class Logger
+    public class Logger
     {
         private static Queue<LogEntry> Queue = new Queue<LogEntry>();
         private static bool Writing = false;
 
-        private static FileStream File = new FileStream(
-            Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location) + ".log",
-            FileMode.Create,
-            FileAccess.Write,
-            FileShare.Read
-        );
+        private FileStream File;
 
-        public static void Log(LogEntry entry)
+        public Logger(string name)
         {
-            Log(entry, false);
+            File = new FileStream(
+                name,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.Read
+            );
+        }
+        
+        public void Write(LogEntry entry)
+        {
+            OutputToConsole(File, entry, false);
         }
 
-        private static void Log(LogEntry entry, bool force)
+        private static void OutputToConsole(FileStream file, LogEntry entry, bool force)
         {
             if (Writing && !force) {
                 Queue.Enqueue(entry);
@@ -46,11 +48,11 @@ namespace StockingBot
             console.Write(line);
 
             byte[] lineBytes = Encoding.UTF8.GetBytes(line);
-            File.Write(lineBytes, 0, lineBytes.Length);
-            File.Flush();
+            file.Write(lineBytes, 0, lineBytes.Length);
+            file.Flush();
 
             if (Queue.Count > 0) {
-                Log(Queue.Dequeue(), true);
+                OutputToConsole(file, Queue.Dequeue(), true);
             } else {
                 Writing = false;
             }
