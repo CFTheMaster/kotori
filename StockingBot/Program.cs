@@ -1,6 +1,8 @@
-﻿using StockingBot.Managers;
+﻿using LinqToTwitter;
+using StockingBot.Managers;
 using StockingBot.Sources;
 using StockingBot.Sources.Danbooru;
+using StockingBot.Sources.Gelbooru;
 using StockingBot.Sources.Konachan;
 using StockingBot.Sources.Yandere;
 using System;
@@ -8,7 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using LinqToTwitter;
 
 namespace StockingBot
 {
@@ -73,6 +74,7 @@ namespace StockingBot
             Clients.Add(new DanbooruClient());
             Clients.Add(new KonachanClient());
             Clients.Add(new YandereClient());
+            Clients.Add(new GelbooruClient());
 
             foreach (Bot bot in Bots) {
                 SchedulePost(0, bot);
@@ -129,33 +131,41 @@ namespace StockingBot
             });
 
             string[] tags = Config.Get($"Bot.{bot.Name}.Source.{client.Name}", $"Tags", string.Join(" ", client.DefaultTags)).Split(' ');
-            bool stopAndRetry = false;
             ImageResult result = client.GetRandomPost(tags);
+
+            if (result == null) {
+                Log.Write(new LogEntry {
+                    Section = bot.Name,
+                    Text = @"Result was null!",
+                    Error = true,
+                });
+
+                SchedulePost(1, bot);
+                return;
+            }
 
             Log.Write(new LogEntry {
                 Section = bot.Name,
                 Text = $@"Got result! Hash: {result.FileHash}, Extension: {result.FileExtension}. Checking if the hash is recorded already...",
             });
 
-            if (!stopAndRetry && result.FileHash.Length < 1) {
-                stopAndRetry = true;
-                Log.Write(new LogEntry
-                {
+            if (result.FileHash.Trim().Length < 1 || result.FileExtension.Trim().Length < 1) {
+                Log.Write(new LogEntry {
                     Section = bot.Name,
                     Text = @"Empty result?!",
                     Error = true,
                 });
+
+                SchedulePost(1, bot);
+                return;
             }
 
-            if (!stopAndRetry && bot.Hashes.Exists(result.FileHash)) {
-                stopAndRetry = true;
+            if (bot.Hashes.Exists(result.FileHash)) {
                 Log.Write(new LogEntry {
                     Section = bot.Name,
                     Text = @"Hash found in post history!",
                 });
-            }
 
-            if (stopAndRetry) {
                 SchedulePost(1, bot);
                 return;
             }

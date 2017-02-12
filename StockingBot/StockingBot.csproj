@@ -60,6 +60,7 @@
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bot.cs" />
@@ -67,6 +68,8 @@
     <Compile Include="Sources\Danbooru\DanbooruClient.cs" />
     <Compile Include="Sources\Danbooru\DanbooruResult.cs" />
     <Compile Include="Managers\HashManager.cs" />
+    <Compile Include="Sources\Gelbooru\GelbooruResult.cs" />
+    <Compile Include="Sources\Gelbooru\GelbooruClient.cs" />
     <Compile Include="Sources\ImageClient.cs" />
     <Compile Include="Sources\ImageResult.cs" />
     <Compile Include="Sources\Konachan\KonachanClient.cs" />

@@ -11,12 +11,21 @@ namespace StockingBot.Sources.Yandere
 
         public override ImageResult GetRandomPost(string[] tags)
         {
-            ImageResult result;
+            ImageResult result = null;
             
             using (WebClient web = new WebClient())
             {
                 string url = string.Format(RandomUrl, string.Join("+", tags));
-                result = JsonConvert.DeserializeObject<YandereResult[]>(web.DownloadString(url))[0];
+                
+                try {
+                    result = JsonConvert.DeserializeObject<YandereResult[]>(web.DownloadString(url))[0];
+                } catch (WebException ex) {
+                    Logger.Write(new LogEntry {
+                        Section = Name,
+                        Text = ex.Message,
+                        Error = true,
+                    });
+                }
             }
 
             return result;
