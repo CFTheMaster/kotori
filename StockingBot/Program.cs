@@ -117,7 +117,15 @@ namespace StockingBot
             }
 
             Scheduler.Schedule(DateTime.Now.AddMinutes(minutes).Ticks, () => {
-                Post(bot);
+                try {
+                    Post(bot);
+                } catch {
+                    Log.Write(new LogEntry {
+                        Section = bot.Name,
+                        Text = @"Something happened!",
+                        Error = true,
+                    });
+                }
             });
         }
         
