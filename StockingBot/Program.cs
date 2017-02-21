@@ -125,6 +125,7 @@ namespace StockingBot
                         Text = @"Something happened!",
                         Error = true,
                     });
+                    SchedulePost(1, bot);
                 }
             });
         }
