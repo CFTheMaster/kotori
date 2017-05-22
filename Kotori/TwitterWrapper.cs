@@ -1,7 +1,7 @@
 ﻿using LinqToTwitter;
 using System;
 
-namespace TwitterPicBot
+namespace Kotori
 {
     public class TwitterWrapper : IDisposable
     {

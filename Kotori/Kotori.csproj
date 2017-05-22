@@ -24,6 +24,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <NoWarn>
+    </NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -65,30 +67,35 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bot.cs" />
-    <Compile Include="Managers\ConfigManager.cs" />
-    <Compile Include="Sources\Danbooru\DanbooruClient.cs" />
-    <Compile Include="Sources\Danbooru\DanbooruResult.cs" />
-    <Compile Include="Managers\HashManager.cs" />
-    <Compile Include="Sources\Gelbooru\GelbooruResult.cs" />
-    <Compile Include="Sources\Gelbooru\GelbooruClient.cs" />
+    <Compile Include="BotException.cs" />
+    <Compile Include="Sources\Danbooru\DanbooruImageClient.cs" />
+    <Compile Include="Sources\Danbooru\DanbooruImageResult.cs" />
+    <Compile Include="Sources\Gelbooru\GelbooruImageResult.cs" />
+    <Compile Include="Sources\Gelbooru\GelbooruImageClient.cs" />
+    <Compile Include="Sources\IImageResult.cs" />
     <Compile Include="Sources\ImageClient.cs" />
+    <Compile Include="Sources\ImageClientAttribute.cs" />
+    <Compile Include="Sources\ImageClientException.cs" />
     <Compile Include="Sources\ImageResult.cs" />
-    <Compile Include="Sources\Konachan\KonachanClient.cs" />
-    <Compile Include="Sources\Konachan\KonachanResult.cs" />
-    <Compile Include="Logger.cs" />
+    <Compile Include="Sources\Konachan\KonachanImageClient.cs" />
+    <Compile Include="Sources\Konachan\KonachanImageResult.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Rand.cs" />
-    <Compile Include="Scheduler.cs" />
     <Compile Include="TwitterWrapper.cs" />
-    <Compile Include="Sources\Yandere\YandereClient.cs" />
-    <Compile Include="Sources\Yandere\YandereResult.cs" />
+    <Compile Include="Sources\Yandere\YandereImageClient.cs" />
+    <Compile Include="Sources\Yandere\YandereImageResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="kotori.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\index\Index\Index.csproj">
+      <Project>{f933cd71-c711-43c9-9bc9-685a0357b199}</Project>
+      <Name>Index</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

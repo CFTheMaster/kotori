@@ -1,24 +1,22 @@
 ﻿using System.Net;
 
-namespace TwitterPicBot.Sources
+namespace Kotori.Sources
 {
-    public abstract class ImageResult
+    public class ImageResult
     {
-        public virtual string Id => string.Empty;
-        public virtual string FileUrl => string.Empty;
-        public virtual string PostUrl => string.Empty;
-        public virtual string FileHash => string.Empty;
-        public virtual string FileExtension => string.Empty;
-        public virtual string[] Tags => null;
+        public string Id;
+        public string FileUrl;
+        public string PostUrl;
+        public string FileHash;
+        public string FileExtension;
+        public string[] Tags;
 
         public byte[] Download()
         {
             byte[] data;
             
             using (WebClient web = new WebClient())
-            {
                 data = web.DownloadData(FileUrl);
-            }
 
             return data;
         }
