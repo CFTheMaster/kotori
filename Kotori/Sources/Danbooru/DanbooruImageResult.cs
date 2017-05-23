@@ -19,8 +19,29 @@ namespace Kotori.Sources.Danbooru
         [JsonProperty("tag_string")]
         public string Tags;
 
+        [JsonProperty("rating")]
+        public string Rating;
+
         public ImageResult ToImageResult()
         {
+            SafetyRating rating;
+
+            switch (Rating)
+            {
+                case "s":
+                    rating = SafetyRating.Safe;
+                    break;
+
+                case "q":
+                    rating = SafetyRating.Questionable;
+                    break;
+
+                case "e":
+                default:
+                    rating = SafetyRating.Explicit;
+                    break;
+            }
+
             return new ImageResult {
                 Id = Id.ToString(),
                 PostUrl = "http://danbooru.donmai.us/posts/" + Id,
@@ -28,6 +49,7 @@ namespace Kotori.Sources.Danbooru
                 FileHash = Hash,
                 FileExtension = "." + Ext,
                 Tags = Tags.Split(' '),
+                Rating = rating,
             };
         }
     }

@@ -19,8 +19,29 @@ namespace Kotori.Sources.Yandere
         [JsonProperty("tags")]
         public string Tags;
 
+        [JsonProperty("rating")]
+        public string Rating;
+
         public ImageResult ToImageResult()
         {
+            SafetyRating rating;
+
+            switch (Rating)
+            {
+                case "s":
+                    rating = SafetyRating.Safe;
+                    break;
+
+                case "q":
+                    rating = SafetyRating.Questionable;
+                    break;
+
+                case "e":
+                default:
+                    rating = SafetyRating.Explicit;
+                    break;
+            }
+
             return new ImageResult
             {
                 Id = Id.ToString(),
@@ -29,6 +50,7 @@ namespace Kotori.Sources.Yandere
                 FileHash = Hash,
                 FileExtension = "." + FileExt,
                 Tags = Tags.Split(' '),
+                Rating = rating,
             };
         }
     }

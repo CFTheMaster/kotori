@@ -68,6 +68,7 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="BotException.cs" />
+    <Compile Include="SafetyRating.cs" />
     <Compile Include="Sources\Danbooru\DanbooruImageClient.cs" />
     <Compile Include="Sources\Danbooru\DanbooruImageResult.cs" />
     <Compile Include="Sources\Gelbooru\GelbooruImageResult.cs" />

@@ -12,6 +12,7 @@ namespace Kotori.Sources.Gelbooru
             Ext = Path.GetExtension(FileUrl);
             Hash = xml.Attributes["md5"].InnerText.Trim();
             Tags = xml.Attributes["tags"].InnerText.Trim().Split(' ');
+            Rating = xml.Attributes["rating"].InnerText.Trim();
         }
 
         public int Id;
@@ -19,9 +20,28 @@ namespace Kotori.Sources.Gelbooru
         public string Ext;
         public string Hash;
         public string[] Tags;
+        public string Rating;
 
         public ImageResult ToImageResult()
         {
+            SafetyRating rating;
+
+            switch (Rating)
+            {
+                case "s":
+                    rating = SafetyRating.Safe;
+                    break;
+
+                case "q":
+                    rating = SafetyRating.Questionable;
+                    break;
+
+                case "e":
+                default:
+                    rating = SafetyRating.Explicit;
+                    break;
+            }
+
             return new ImageResult
             {
                 Id = Id.ToString(),
@@ -30,6 +50,7 @@ namespace Kotori.Sources.Gelbooru
                 FileHash = Hash,
                 FileExtension = Ext,
                 Tags = Tags,
+                Rating = rating,
             };
         }
     }

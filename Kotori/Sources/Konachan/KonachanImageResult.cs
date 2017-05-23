@@ -17,8 +17,29 @@ namespace Kotori.Sources.Konachan
         [JsonProperty("tags")]
         public string Tags;
 
+        [JsonProperty("rating")]
+        public string Rating;
+
         public ImageResult ToImageResult()
         {
+            SafetyRating rating;
+
+            switch (Rating)
+            {
+                case "s":
+                    rating = SafetyRating.Safe;
+                    break;
+
+                case "q":
+                    rating = SafetyRating.Questionable;
+                    break;
+
+                case "e":
+                default:
+                    rating = SafetyRating.Explicit;
+                    break;
+            }
+
             return new ImageResult
             {
                 Id = Id.ToString(),
@@ -27,6 +48,7 @@ namespace Kotori.Sources.Konachan
                 FileHash = Hash,
                 FileExtension = Path.GetExtension(FileUrl),
                 Tags = Tags.Split(' '),
+                Rating = rating,
             };
         }
     }

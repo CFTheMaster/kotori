@@ -10,6 +10,7 @@ namespace Kotori.Sources
         public string FileHash;
         public string FileExtension;
         public string[] Tags;
+        public SafetyRating Rating;
 
         public byte[] Download()
         {

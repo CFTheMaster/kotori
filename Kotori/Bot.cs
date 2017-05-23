@@ -26,7 +26,7 @@ namespace Kotori
         public Bot(string name, ImageClient[] clients, ConfigManager cfg)
         {
             Name = name;
-            log = new Logger("Bot." + name);
+            log = new Logger($"Bot.{Name}");
             config = cfg;
             imageClients = clients;
             twitter = new TwitterWrapper(
@@ -120,11 +120,10 @@ namespace Kotori
             images.Remove(result);
             SaveCache();
 
-            string[] blocked = config.Get<string>($"Bot", "BlockedTags").Trim().Split(' ');
+            SafetyRating MaxRating = config.Get($"Bot.{Name}", "MaxRating", SafetyRating.Safe);
 
-            foreach (string tag in blocked)
-                if (result.Tags.Contains(tag))
-                    throw new BotException($"Blocked tag '{tag}' found!");
+            if (result.Rating > MaxRating)
+                throw new BotException($"Rating was too high: {result.Rating}");
 
             log.Add($"Hash: {result.FileHash}{result.FileExtension}");
 
