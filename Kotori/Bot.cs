@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace Kotori
@@ -118,6 +119,12 @@ namespace Kotori
             ImageResult result = images[rng.Next() % images.Count];
             images.Remove(result);
             SaveCache();
+
+            string[] blocked = config.Get<string>($"Bot", "BlockedTags").Trim().Split(' ');
+
+            foreach (string tag in blocked)
+                if (result.Tags.Contains(tag))
+                    throw new BotException($"Blocked tag '{tag}' found!");
 
             log.Add($"Hash: {result.FileHash}{result.FileExtension}");
 
