@@ -14,19 +14,30 @@ namespace Kotori
         public static Version Version => Assembly.GetExecutingAssembly().GetName().Version;
         public static DateTime BuildDate => new DateTime(2000, 1, 1).AddDays(Version.Build).AddSeconds(Version.Revision * 2);
                 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             ConsoleLogger.Init("Kotori", args.Contains("rawlogs"));
             Logger.OnAdd += (e) => ConsoleLogger.WriteLine(e);
             Logger log = new Logger("Kotori");
 
             log.Add($"Kotori version {Version.Major}.{Version.Minor}", LogLevel.Info);
-            log.Add($"Build date: {BuildDate}");
 
             using (ConfigManager config = new ConfigManager("Kotori.ini"))
             {
                 Logger.Verbose = config.Get("Kotori", "VerboseLogging", false);
 
+                log.Add($"Build date: {BuildDate}");
+
+                string consumerKey = config.Get("Bot", "ConsumerKey", string.Empty);
+                string consumerSecret = config.Get("Bot", "ConsumerSecret", string.Empty);
+
+                if (string.IsNullOrEmpty(consumerKey)
+                    || string.IsNullOrEmpty(consumerSecret))
+                {
+                    log.Add("Please fill out the ConsumerKey and ConsumerSecret fields in the Bot section of the config.", LogLevel.Error);
+                    return;
+                }
+                
                 using (ManualResetEvent mre = new ManualResetEvent(false))
                 {
                     Console.CancelKeyPress += (s, e) =>

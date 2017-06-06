@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 
 namespace Kotori
@@ -14,14 +13,20 @@ namespace Kotori
     public class Bot : IDisposable
     {
         public readonly string Name;
+
         private readonly ConfigManager config;
-        private readonly TwitterWrapper twitter;
+        private readonly TwitterContext twitter;
         private readonly ImageClient[] imageClients;
         private readonly Logger log;
         private readonly Random rng = new Random();
+
         private Timer timer = null;
         private List<ImageResult> images = new List<ImageResult>();
         private bool imagesBusy = false;
+
+        private const string CACHE_DIR = "Cache";
+        private string CacheFile => Path.Combine(CACHE_DIR, $"{Name}.json");
+        private string ConfigSection => $"Bot.{Name}";
 
         public Bot(string name, ImageClient[] clients, ConfigManager cfg)
         {
@@ -29,33 +34,78 @@ namespace Kotori
             log = new Logger($"Bot.{Name}");
             config = cfg;
             imageClients = clients;
-            twitter = new TwitterWrapper(
-                config.Get<string>($"Bot.{Name}.Twitter", "ConsumerKey"),
-                config.Get<string>($"Bot.{Name}.Twitter", "ConsumerSecret"),
-                config.Get<string>($"Bot.{Name}.Twitter", "OAuthToken"),
-                config.Get<string>($"Bot.{Name}.Twitter", "OAuthTokenSecret")
-            );
-            LoadCache();
+            twitter = new TwitterContext(Authorise());
+        }
+
+        private IAuthorizer Authorise()
+        {
+            IAuthorizer auth = null;
+
+            string consumerKey = config.Get<string>("Bot", "ConsumerKey");
+            string consumerSecret = config.Get<string>("Bot", "ConsumerSecret");
+
+            if (config.Contains(ConfigSection, "OAToken")
+                && config.Contains(ConfigSection, "OASecret"))
+                auth = new SingleUserAuthorizer
+                {
+                    CredentialStore = new SingleUserInMemoryCredentialStore
+                    {
+                        ConsumerKey = consumerKey,
+                        ConsumerSecret = consumerSecret,
+                        OAuthToken = config.Get<string>(ConfigSection, "OAToken"),
+                        OAuthTokenSecret = config.Get<string>(ConfigSection, "OASecret"),
+                    }
+                };
+            else
+            {
+                auth = new PinAuthorizer
+                {
+                    CredentialStore = new SingleUserInMemoryCredentialStore
+                    {
+                        ConsumerKey = consumerKey,
+                        ConsumerSecret = consumerSecret,
+                    },
+                    GoToTwitterAuthorization = x => log.Add($"Go to '{x}' in a web browser.", LogLevel.Important),
+                    GetPin = () =>
+                    {
+                        log.Add("After authorising you will receive a 7-digit pin number, enter this here:", LogLevel.Info);
+                        return Console.ReadLine();
+                    }
+                };
+
+                auth.AuthorizeAsync().GetAwaiter().GetResult();
+                config.Set(ConfigSection, "OAToken", auth.CredentialStore.OAuthToken);
+                config.Set(ConfigSection, "OASecret", auth.CredentialStore.OAuthTokenSecret);
+            }
+
+            return auth;
         }
 
         private void SaveCache()
         {
-            if (!Directory.Exists("Cache"))
-                Directory.CreateDirectory("Cache");
+            if (images.Count < 1)
+                return;
 
-            File.WriteAllText(Path.Combine("Cache", $"{Name}.json"), JsonConvert.SerializeObject(images));
+            if (!Directory.Exists(CACHE_DIR))
+                Directory.CreateDirectory(CACHE_DIR);
+
+            File.WriteAllText(CacheFile, JsonConvert.SerializeObject(images));
+            images.Clear();
         }
 
         private void LoadCache()
         {
-            string filename = Path.Combine("Cache", $"{Name}.json");
+            if (images.Count > 0)
+                return;
 
-            if (File.Exists(filename))
-                images = JsonConvert.DeserializeObject<List<ImageResult>>(File.ReadAllText(filename));
+            if (File.Exists(CacheFile))
+                images = JsonConvert.DeserializeObject<List<ImageResult>>(File.ReadAllText(CacheFile));
         }
 
         private void PopulateImages()
         {
+            LoadCache();
+
             if (imagesBusy || images.Count > 0)
                 return;
 
@@ -162,8 +212,9 @@ namespace Kotori
 
             try
             {
-                media = twitter.Media(image);
-                tweet = twitter.Tweet(url, new ulong[] { media.MediaID });
+                // mediaType doesn't actually matter for twitter itself so we just staticly set it to png
+                media = twitter.UploadMediaAsync(image, "image/png").GetAwaiter().GetResult();
+                tweet = twitter.TweetAsync(url, new[] { media.MediaID }).GetAwaiter().GetResult();
             }
             catch (TwitterQueryException ex)
             {

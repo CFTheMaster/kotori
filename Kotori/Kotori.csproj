@@ -82,7 +82,6 @@
     <Compile Include="Sources\Konachan\KonachanImageResult.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TwitterWrapper.cs" />
     <Compile Include="Sources\Yandere\YandereImageClient.cs" />
     <Compile Include="Sources\Yandere\YandereImageResult.cs" />
   </ItemGroup>
