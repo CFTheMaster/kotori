@@ -114,7 +114,7 @@ namespace Kotori
             foreach (ImageClient client in imageClients)
             {
                 log.Add($"Downloading metadata for all posts matching our tags from {client.Name}...");
-                string[] tags = config.Get<string>($"Bot.{Name}.Source.{client.Name}", "Tags").Split(' ');
+                string[] tags = config.Get<string>($"{ConfigSection}.Source.{client.Name}", "Tags").Split(' ');
 
                 if (tags.Length < 1 || tags[0].Length < 1)
                     throw new BotException($"No tags specified ({client.Name})!");
@@ -170,15 +170,12 @@ namespace Kotori
             images.Remove(result);
             SaveCache();
 
-            SafetyRating MaxRating = config.Get($"Bot.{Name}", "MaxRating", SafetyRating.Safe);
-
-            if (result.Rating > MaxRating)
-                throw new BotException($"Rating was too high: {result.Rating}");
-
-            log.Add($"Hash: {result.FileHash}{result.FileExtension}");
+            SafetyRating maxRating = config.Get(ConfigSection, "MaxRating", SafetyRating.Safe);
 
             if (result.FileHash.Trim().Length < 1 || result.FileExtension.Trim().Length < 1)
                 throw new BotException("Result was empty");
+
+            log.Add($"Hash: {result.FileHash}{result.FileExtension}");
 
             byte[] image = new byte[0];
 
@@ -201,6 +198,9 @@ namespace Kotori
                 File.WriteAllBytes(savePath, image);
                 log.Add($"Saved file to {savePath}");
             }
+
+            if (result.Rating > maxRating)
+                throw new BotException($"Rating was too high: {result.Rating}");
 
             Post(image, result.PostUrl);
         }
