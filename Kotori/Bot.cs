@@ -76,6 +76,7 @@ namespace Kotori
                 auth.AuthorizeAsync().GetAwaiter().GetResult();
                 config.Set(ConfigSection, "OAToken", auth.CredentialStore.OAuthToken);
                 config.Set(ConfigSection, "OASecret", auth.CredentialStore.OAuthTokenSecret);
+                config.Save();
             }
 
             return auth;
@@ -83,13 +84,14 @@ namespace Kotori
 
         private void SaveCache()
         {
-            if (images.Count < 1)
-                return;
-
             if (!Directory.Exists(CACHE_DIR))
                 Directory.CreateDirectory(CACHE_DIR);
 
-            File.WriteAllText(CacheFile, JsonConvert.SerializeObject(images));
+            if (images.Count < 1)
+                File.Delete(CacheFile);
+            else
+                File.WriteAllText(CacheFile, JsonConvert.SerializeObject(images));
+
             images.Clear();
         }
 
@@ -114,7 +116,15 @@ namespace Kotori
             foreach (ImageClient client in imageClients)
             {
                 log.Add($"Downloading metadata for all posts matching our tags from {client.Name}...");
-                string[] tags = config.Get<string>($"{ConfigSection}.Source.{client.Name}", "Tags").Split(' ');
+                string rawTags = config.Get($"{ConfigSection}.Source.{client.Name}", "Tags", string.Empty);
+
+                if (string.IsNullOrEmpty(rawTags))
+                {
+                    log.Add($"No tags set for {client.Name}, skipping...", LogLevel.Error);
+                    continue;
+                }
+
+                string[] tags = rawTags.Split(' ');
 
                 if (tags.Length < 1 || tags[0].Length < 1)
                     throw new BotException($"No tags specified ({client.Name})!");
