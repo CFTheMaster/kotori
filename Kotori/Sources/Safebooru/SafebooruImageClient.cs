@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Xml;
-using Kotori.Sources.Gelbooru;
 
 namespace Kotori.Sources.Safebooru
 {
@@ -20,7 +19,7 @@ namespace Kotori.Sources.Safebooru
 
         public override ImageResult[] GetAllPosts(string[] tags)
         {
-            List<GelbooruImageResult> images = new List<GelbooruImageResult>();
+            List<SafebooruImageResult> images = new List<SafebooruImageResult>();
             int processed = 0;
             int total = 0;
             int page = 0;
@@ -55,7 +54,7 @@ namespace Kotori.Sources.Safebooru
                             continue;
 
                         ++processed;
-                        images.Add(new GelbooruImageResult(node));
+                        images.Add(new SafebooruImageResult(node));
                     }
 
                     ++page;
