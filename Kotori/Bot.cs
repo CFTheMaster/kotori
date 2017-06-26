@@ -86,12 +86,8 @@ namespace Kotori
         {
             if (!Directory.Exists(CACHE_DIR))
                 Directory.CreateDirectory(CACHE_DIR);
-
-            if (images.Count < 1)
-                File.Delete(CacheFile);
-            else
-                File.WriteAllText(CacheFile, JsonConvert.SerializeObject(images));
-
+            
+            File.WriteAllText(CacheFile, JsonConvert.SerializeObject(images));
             images.Clear();
         }
 
