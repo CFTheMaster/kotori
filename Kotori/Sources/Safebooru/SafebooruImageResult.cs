@@ -45,7 +45,7 @@ namespace Kotori.Sources.Safebooru
             return new ImageResult
             {
                 Id = Id.ToString(),
-                PostUrl = "http://safebooru.com/index.php?page=post&s=view&id=" + Id,
+                PostUrl = "http://safebooru.org/index.php?page=post&s=view&id=" + Id,
                 FileUrl = "http:" + FileUrl,
                 FileHash = Hash,
                 FileExtension = Ext,
