@@ -44,8 +44,8 @@ namespace Kotori.Sources.Danbooru
 
             return new ImageResult {
                 Id = Id.ToString(),
-                PostUrl = "http://danbooru.donmai.us/posts/" + Id,
-                FileUrl = "http://danbooru.donmai.us" + FileUrl,
+                PostUrl = "https://danbooru.donmai.us/posts/" + Id,
+                FileUrl = "https://danbooru.donmai.us" + FileUrl,
                 FileHash = Hash,
                 FileExtension = "." + Ext,
                 Tags = Tags.Split(' '),

@@ -7,4 +7,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("flash.moe 2017")]
 [assembly: ComVisible(false)]
 [assembly: Guid("93c349c6-ffb0-46e2-9488-85e71cdcaae8")]
-[assembly: AssemblyVersion("3.3.*")]
+[assembly: AssemblyVersion("3.4.*")]

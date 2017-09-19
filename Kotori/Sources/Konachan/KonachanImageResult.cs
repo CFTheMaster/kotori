@@ -43,8 +43,8 @@ namespace Kotori.Sources.Konachan
             return new ImageResult
             {
                 Id = Id.ToString(),
-                PostUrl = "http://konachan.com/post/show/" + Id,
-                FileUrl = "http:" + FileUrl,
+                PostUrl = "https://konachan.com/post/show/" + Id,
+                FileUrl = "https:" + FileUrl,
                 FileHash = Hash,
                 FileExtension = Path.GetExtension(FileUrl),
                 Tags = Tags.Split(' '),

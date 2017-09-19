@@ -45,7 +45,7 @@ namespace Kotori.Sources.Yandere
             return new ImageResult
             {
                 Id = Id.ToString(),
-                PostUrl = "http://konachan.com/post/show/" + Id,
+                PostUrl = "https://yande.re/post/show/" + Id,
                 FileUrl = FileUrl,
                 FileHash = Hash,
                 FileExtension = "." + FileExt,

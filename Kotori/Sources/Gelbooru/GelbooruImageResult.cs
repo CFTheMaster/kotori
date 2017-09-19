@@ -45,8 +45,8 @@ namespace Kotori.Sources.Gelbooru
             return new ImageResult
             {
                 Id = Id.ToString(),
-                PostUrl = "http://gelbooru.com/index.php?page=post&s=view&id=" + Id,
-                FileUrl = "http:" + FileUrl,
+                PostUrl = "https://gelbooru.com/index.php?page=post&s=view&id=" + Id,
+                FileUrl = "https:" + FileUrl,
                 FileHash = Hash,
                 FileExtension = Ext,
                 Tags = Tags,
