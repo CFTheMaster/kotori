@@ -139,17 +139,13 @@ namespace Kotori
             if (Timer != null)
                 return;
 
-            Timer = new Timer(x => IntervalHandler(), null, Config.Get("Bot", "DueTime", 0), Config.Get("Bot", "ScheduleInterval", 15) * 60 * 1000);
+            Timer = new Timer(x => IntervalHandler(), null, 0, Config.Get("Bot", "ScheduleInterval", 15) * 60 * 1000);
         }
-
-        private DateTime dueTime;
 
         public void Stop()
         {
             if (Timer == null)
                 return;
-
-            Config.Set("Bot", "DueTime", (int)DateTime.Now.Subtract(dueTime).TotalMilliseconds);
 
             Timer.Dispose();
             Timer = null;
@@ -157,7 +153,6 @@ namespace Kotori
 
         private void IntervalHandler()
         {
-            dueTime = DateTime.Now;
             int attempts = 0;
 
             while (attempts < 5)
