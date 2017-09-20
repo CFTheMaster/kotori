@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace Kotori
 {
-    class Program
+    public static class Program
     {
         public static Version Version => Assembly.GetExecutingAssembly().GetName().Version;
         public static DateTime BuildDate => new DateTime(2000, 1, 1).AddDays(Version.Build).AddSeconds(Version.Revision * 2);

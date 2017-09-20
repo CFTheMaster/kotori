@@ -1,4 +1,5 @@
-﻿using Index.Configuration;
+﻿using Index;
+using Index.Configuration;
 using Index.Logging;
 using Kotori.Sources;
 using LinqToTwitter;
@@ -14,15 +15,14 @@ namespace Kotori
     {
         public readonly string Name;
 
-        private readonly ConfigManager config;
-        private readonly TwitterContext twitter;
-        private readonly ImageClient[] imageClients;
-        private readonly Logger log;
-        private readonly Random rng = new Random();
+        private readonly ConfigManager Config;
+        private readonly TwitterContext Twitter;
+        private readonly ImageClient[] ImageClients;
+        private readonly Logger Log;
 
-        private Timer timer = null;
-        private List<ImageResult> images = new List<ImageResult>();
-        private bool imagesBusy = false;
+        private Timer Timer = null;
+        private List<ImageResult> Images = new List<ImageResult>();
+        private bool ImagesBusy = false;
 
         private const string CACHE_DIR = "Cache";
         private string CacheFile => Path.Combine(CACHE_DIR, $"{Name}.json");
@@ -31,29 +31,29 @@ namespace Kotori
         public Bot(string name, ImageClient[] clients, ConfigManager cfg)
         {
             Name = name;
-            log = new Logger($"Bot.{Name}");
-            config = cfg;
-            imageClients = clients;
-            twitter = new TwitterContext(Authorise());
+            Log = new Logger($"Bot.{Name}");
+            Config = cfg;
+            ImageClients = clients;
+            Twitter = new TwitterContext(Authorise());
         }
 
         private IAuthorizer Authorise()
         {
             IAuthorizer auth = null;
 
-            string consumerKey = config.Get<string>("Bot", "ConsumerKey");
-            string consumerSecret = config.Get<string>("Bot", "ConsumerSecret");
+            string consumerKey = Config.Get<string>("Bot", "ConsumerKey");
+            string consumerSecret = Config.Get<string>("Bot", "ConsumerSecret");
 
-            if (config.Contains(ConfigSection, "OAToken")
-                && config.Contains(ConfigSection, "OASecret"))
+            if (Config.Contains(ConfigSection, "OAToken")
+                && Config.Contains(ConfigSection, "OASecret"))
                 auth = new SingleUserAuthorizer
                 {
                     CredentialStore = new SingleUserInMemoryCredentialStore
                     {
                         ConsumerKey = consumerKey,
                         ConsumerSecret = consumerSecret,
-                        OAuthToken = config.Get<string>(ConfigSection, "OAToken"),
-                        OAuthTokenSecret = config.Get<string>(ConfigSection, "OASecret"),
+                        OAuthToken = Config.Get<string>(ConfigSection, "OAToken"),
+                        OAuthTokenSecret = Config.Get<string>(ConfigSection, "OASecret"),
                     }
                 };
             else
@@ -65,18 +65,18 @@ namespace Kotori
                         ConsumerKey = consumerKey,
                         ConsumerSecret = consumerSecret,
                     },
-                    GoToTwitterAuthorization = x => log.Add($"Go to '{x}' in a web browser.", LogLevel.Important),
+                    GoToTwitterAuthorization = x => Log.Add($"Go to '{x}' in a web browser.", LogLevel.Important),
                     GetPin = () =>
                     {
-                        log.Add("After authorising you will receive a 7-digit pin number, enter this here:", LogLevel.Info);
+                        Log.Add("After authorising you will receive a 7-digit pin number, enter this here:", LogLevel.Info);
                         return Console.ReadLine();
                     }
                 };
 
                 auth.AuthorizeAsync().GetAwaiter().GetResult();
-                config.Set(ConfigSection, "OAToken", auth.CredentialStore.OAuthToken);
-                config.Set(ConfigSection, "OASecret", auth.CredentialStore.OAuthTokenSecret);
-                config.Save();
+                Config.Set(ConfigSection, "OAToken", auth.CredentialStore.OAuthToken);
+                Config.Set(ConfigSection, "OASecret", auth.CredentialStore.OAuthTokenSecret);
+                Config.Save();
             }
 
             return auth;
@@ -87,39 +87,39 @@ namespace Kotori
             if (!Directory.Exists(CACHE_DIR))
                 Directory.CreateDirectory(CACHE_DIR);
 
-            if (images.Count < 1)
+            if (Images.Count < 1)
                 return;
             
-            File.WriteAllText(CacheFile, JsonConvert.SerializeObject(images));
-            images.Clear();
+            File.WriteAllText(CacheFile, JsonConvert.SerializeObject(Images));
+            Images.Clear();
         }
 
         private void LoadCache()
         {
-            if (images.Count > 0)
+            if (Images.Count > 0)
                 return;
 
             if (File.Exists(CacheFile))
-                images = JsonConvert.DeserializeObject<List<ImageResult>>(File.ReadAllText(CacheFile));
+                Images = JsonConvert.DeserializeObject<List<ImageResult>>(File.ReadAllText(CacheFile));
         }
 
         private void PopulateImages()
         {
             LoadCache();
 
-            if (imagesBusy || images.Count > 0)
+            if (ImagesBusy || Images.Count > 0)
                 return;
 
-            imagesBusy = true;
+            ImagesBusy = true;
 
-            foreach (ImageClient client in imageClients)
+            foreach (ImageClient client in ImageClients)
             {
-                log.Add($"Downloading metadata for all posts matching our tags from {client.Name}...");
-                string rawTags = config.Get($"{ConfigSection}.Source.{client.Name}", "Tags", string.Empty);
+                Log.Add($"Downloading metadata for all posts matching our tags from {client.Name}...");
+                string rawTags = Config.Get($"{ConfigSection}.Source.{client.Name}", "Tags", string.Empty);
 
                 if (string.IsNullOrEmpty(rawTags))
                 {
-                    log.Add($"No tags set for {client.Name}, skipping...", LogLevel.Error);
+                    Log.Add($"No tags set for {client.Name}, skipping...", LogLevel.Error);
                     continue;
                 }
 
@@ -128,31 +128,36 @@ namespace Kotori
                 if (tags.Length < 1 || tags[0].Length < 1)
                     throw new BotException($"No tags specified ({client.Name})!");
 
-                images.AddRange(client.GetAllPosts(tags));
+                Images.AddRange(client.GetAllPosts(tags));
             }
 
-            imagesBusy = false;
+            ImagesBusy = false;
         }
 
         public void Start()
         {
-            if (timer != null)
+            if (Timer != null)
                 return;
 
-            timer = new Timer(x => IntervalHandler(), null, 0, config.Get("Bot", "ScheduleInterval", 15) * 60 * 1000);
+            Timer = new Timer(x => IntervalHandler(), null, Config.Get("Bot", "DueTime", 0), Config.Get("Bot", "ScheduleInterval", 15) * 60 * 1000);
         }
+
+        private DateTime dueTime;
 
         public void Stop()
         {
-            if (timer == null)
+            if (Timer == null)
                 return;
 
-            timer.Dispose();
-            timer = null;
+            Config.Set("Bot", "DueTime", (int)DateTime.Now.Subtract(dueTime).TotalMilliseconds);
+
+            Timer.Dispose();
+            Timer = null;
         }
 
         private void IntervalHandler()
         {
+            dueTime = DateTime.Now;
             int attempts = 0;
 
             while (attempts < 5)
@@ -164,7 +169,7 @@ namespace Kotori
                     return;
                 } catch (Exception ex)
                 {
-                    log.Add(ex.Message, LogLevel.Error);
+                    Log.Add(ex.Message, LogLevel.Error);
                     attempts++;
                 }
             }
@@ -172,19 +177,19 @@ namespace Kotori
 
         public void PostRandomImage()
         {
-            if (images.Count < 1)
+            if (Images.Count < 1)
                 PopulateImages();
 
-            ImageResult result = images[rng.Next() % images.Count];
-            images.Remove(result);
+            ImageResult result = Images[RNG.RandomInt32() % Images.Count];
+            Images.Remove(result);
             SaveCache();
 
-            SafetyRating maxRating = config.Get(ConfigSection, "MaxRating", SafetyRating.Safe);
+            SafetyRating maxRating = Config.Get(ConfigSection, "MaxRating", SafetyRating.Safe);
 
             if (result.FileHash.Trim().Length < 1 || result.FileExtension.Trim().Length < 1)
                 throw new BotException("Result was empty");
 
-            log.Add($"Hash: {result.FileHash}{result.FileExtension}");
+            Log.Add($"Hash: {result.FileHash}{result.FileExtension}");
 
             byte[] image = new byte[0];
 
@@ -199,13 +204,13 @@ namespace Kotori
             if (image.Length < 1)
                 throw new BotException("File was empty");
 
-            string savePath = config.Get($"Bot.{Name}", "SavePath", string.Empty).Trim();
+            string savePath = Config.Get($"Bot.{Name}", "SavePath", string.Empty).Trim();
 
             if (savePath.Length > 0)
             {
                 savePath = Path.Combine(savePath, result.FileHash + result.FileExtension);
                 File.WriteAllBytes(savePath, image);
-                log.Add($"Saved file to {savePath}");
+                Log.Add($"Saved file to {savePath}");
             }
 
             if (result.Rating > maxRating)
@@ -222,21 +227,19 @@ namespace Kotori
             try
             {
                 // mediaType doesn't actually matter for twitter itself so we just staticly set it to png
-                media = twitter.UploadMediaAsync(image, "image/png").GetAwaiter().GetResult();
-                tweet = twitter.TweetAsync(url, new[] { media.MediaID }).GetAwaiter().GetResult();
+                media = Twitter.UploadMediaAsync(image, "image/png").GetAwaiter().GetResult();
+                tweet = Twitter.TweetAsync(url, new[] { media.MediaID }).GetAwaiter().GetResult();
             }
             catch (TwitterQueryException ex)
             {
-                log.Add(ex.ReasonPhrase, LogLevel.Error);
+                Log.Add(ex.ReasonPhrase, LogLevel.Error);
             }
 
             if (tweet == null)
                 throw new BotException("Failed to post tweet");
 
-            log.Add($"Posted: {tweet.StatusID}", LogLevel.Info);
+            Log.Add($"Posted: {tweet.StatusID}", LogLevel.Info);
         }
-
-        #region IDisposable
 
         private bool IsDisposed = false;
 
@@ -246,7 +249,7 @@ namespace Kotori
             {
                 IsDisposed = true;
                 Stop();
-                twitter.Dispose();
+                Twitter.Dispose();
                 SaveCache();
             }
         }
@@ -261,7 +264,5 @@ namespace Kotori
             Dispose(true);
             GC.SuppressFinalize(true);
         }
-
-        #endregion
     }
 }
