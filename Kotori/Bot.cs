@@ -180,7 +180,7 @@ namespace Kotori
             if (Images.Count < 1)
                 PopulateImages();
 
-            ImageResult result = Images[RNG.RandomInt32() % Images.Count];
+            ImageResult result = Images[(int)(RNG.RandomUInt32() % Images.Count)];
             Images.Remove(result);
             SaveCache();
 
