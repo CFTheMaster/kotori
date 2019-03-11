@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Xml;
 
 namespace Kotori.Sources.Gelbooru
@@ -28,6 +29,7 @@ namespace Kotori.Sources.Gelbooru
             using (WebClient web = new WebClient())
                 do
                 {
+                    web.Encoding = Encoding.UTF8;
                     XmlDocument doc = new XmlDocument();
                     string result = web.DownloadString(string.Format(PAGE_URL, POSTS_PER_PAGE, joinedTags, page));
                     doc.LoadXml(result);

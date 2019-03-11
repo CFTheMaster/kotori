@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 
 namespace Kotori.Sources.Konachan
 {
@@ -23,6 +24,7 @@ namespace Kotori.Sources.Konachan
             using (WebClient web = new WebClient())
                 while (!ended)
                 {
+                    web.Encoding = Encoding.UTF8;
                     string result = web.DownloadString(string.Format(PAGE_URL, joinedTags, POSTS_PER_PAGE, ++page));
                     IEnumerable<KonachanImageResult> posts = JsonConvert.DeserializeObject<KonachanImageResult[]>(result)
                         .Where(x => !string.IsNullOrEmpty(x.Hash));
